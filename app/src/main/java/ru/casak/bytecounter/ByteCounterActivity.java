@@ -50,28 +50,35 @@ public class ByteCounterActivity extends AppCompatActivity {
         protected Integer doInBackground(Void... params) {
             FTPClient client = new FTPClient();
             try {
+                client.connect(HOSTNAME);
+                client.enterLocalPassiveMode();
+                client.setFileType(FTP.BINARY_FILE_TYPE);
+                client.login("anonymous", "anonymous");
+                String remoteFile = "/" + FILENAME;
                 while (true) {
-                    client.connect(HOSTNAME);
-                    client.enterLocalPassiveMode();
-                    client.setFileType(FTP.BINARY_FILE_TYPE);
-                    client.login("anonymous", "anonymous");
-                    String remoteFile = "/" + FILENAME;
-
                     InputStream inputStream = client.retrieveFileStream(remoteFile);
                     byte[] bytesArray = new byte[4096];
                     int bytesRead = -1;
                     if (inputStream == null) {
-                        System.out.println("could not retrieve file: " + FILENAME);
+                        Log.d(TAG, "could not retrieve file: " + FILENAME);
                         continue;
                     }
                     while ((bytesRead = inputStream.read(bytesArray)) != -1) {
                         counter = counter.add(new BigInteger(bytesRead + ""));
                     }
+                    Log.d(TAG, "file: " + FILENAME +" is downloaded");
+                    client.completePendingCommand();
                     inputStream.close();
-                    client.disconnect();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+            finally {
+                try{
+                    client.disconnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             return null;
         }
